@@ -58,14 +58,19 @@ jobs:
     - name: Rsync Deploy
       uses: burnett01/rsync-deployments@7.0.1
       with:
-        switches: -avzr --delete \
-          --exclude=.git \
-          --exclude=.github \
-          --exclude=.env \
-          --exclude=uploads \
-          --exclude=assets/anexos \
-          --exclude=assets/arquivos \
-          --exclude=assets/userimage
+        switches: -avzr \
+            --no-perms \
+            --no-owner \
+            --no-group \
+            --omit-dir-times \
+            --delete \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=.env \
+            --exclude=uploads \
+            --exclude=assets/anexos \
+            --exclude=assets/arquivos \
+            --exclude=assets/userimage
         path: ./
         remote_path: ${{ secrets.TARGET_DIRECTORY }}
         remote_host: ${{ secrets.REMOTE_HOST }}
