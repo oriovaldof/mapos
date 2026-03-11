@@ -74,7 +74,8 @@ jobs:
       continue-on-error: true
       uses: burnett01/rsync-deployments@7.0.1
       with:
-        switches: "-rltvz --delete --no-perms --no-owner --no-group --omit-dir-times --exclude=.git --exclude=.github --exclude=.env --exclude=uploads --exclude=updates --exclude=assets/anexos --exclude=assets/arquivos --exclude=assets/userimage"
+        # switches: "-rltvz --delete --no-perms --no-owner --no-group --omit-dir-times --exclude=.git --exclude=.github --exclude=.env --exclude=uploads --exclude=updates --exclude=assets/anexos --exclude=assets/arquivos --exclude=assets/userimage"
+        switches: "-rltvz --delete --no-perms --no-owner --no-group --omit-dir-times --exclude=.git --exclude=.github --exclude=.env --exclude=uploads --exclude=assets/anexos --exclude=assets/arquivos --exclude=assets/userimage"
         path: ./
         remote_path: ${{ secrets.TARGET_DIRECTORY }}
         remote_host: ${{ secrets.REMOTE_HOST }}
@@ -85,63 +86,63 @@ jobs:
     # ⚙️ AUTO INSTALL (SE NECESSÁRIO)
     #########################################################
 
-    - name: Auto install if needed
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
+    # - name: Auto install if needed
+    #   uses: appleboy/ssh-action@v1.0.3
+    #   with:
+    #     host: ${{ secrets.REMOTE_HOST }}
+    #     username: ${{ secrets.REMOTE_USER }}
+    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #     script: |
 
-          cd ${{ secrets.TARGET_DIRECTORY }}
+    #       cd ${{ secrets.TARGET_DIRECTORY }}
 
-          if [ ! -f application/.env ]; then
-            echo "Instalando MAPOS..."
+    #       if [ ! -f application/.env ]; then
+    #         echo "Instalando MAPOS..."
 
-            curl -X POST http://localhost/install/do_install.php \
-              -d "host=${{ secrets.DB_HOST }}" \
-              -d "dbuser=${{ secrets.DB_USER }}" \
-              -d "dbpassword=${{ secrets.DB_PASS }}" \
-              -d "dbname=${{ secrets.DB_NAME }}" \
-              -d "full_name=${{ secrets.ADMIN_NAME }}" \
-              -d "email=${{ secrets.ADMIN_EMAIL }}" \
-              -d "password=${{ secrets.ADMIN_PASS }}" \
-              -d "base_url=${{ secrets.BASE_URL }}" \
-              -d "enter_token_expire_time=60" \
-              -d "enter_api_enabled=1"
+    #         curl -X POST http://localhost/install/do_install.php \
+    #           -d "host=${{ secrets.DB_HOST }}" \
+    #           -d "dbuser=${{ secrets.DB_USER }}" \
+    #           -d "dbpassword=${{ secrets.DB_PASS }}" \
+    #           -d "dbname=${{ secrets.DB_NAME }}" \
+    #           -d "full_name=${{ secrets.ADMIN_NAME }}" \
+    #           -d "email=${{ secrets.ADMIN_EMAIL }}" \
+    #           -d "password=${{ secrets.ADMIN_PASS }}" \
+    #           -d "base_url=${{ secrets.BASE_URL }}" \
+    #           -d "enter_token_expire_time=60" \
+    #           -d "enter_api_enabled=1"
 
-            echo "Instalação finalizada"
-          else
-            echo "MAPOS já instalado"
-          fi
+    #         echo "Instalação finalizada"
+    #       else
+    #         echo "MAPOS já instalado"
+    #       fi
 
     #########################################################
     # 🔄 MIGRATE AUTOMÁTICO
     #########################################################
 
-    - name: Run migrations
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd ${{ secrets.TARGET_DIRECTORY }}
-          php index.php tools migrate
+    # - name: Run migrations
+    #   uses: appleboy/ssh-action@v1.0.3
+    #   with:
+    #     host: ${{ secrets.REMOTE_HOST }}
+    #     username: ${{ secrets.REMOTE_USER }}
+    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #     script: |
+    #       cd ${{ secrets.TARGET_DIRECTORY }}
+    #       php index.php tools migrate
 
     #########################################################
     # 🔐 REMOVE INSTALL (SEGURANÇA)
     #########################################################
 
-    - name: Remove install folder
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd ${{ secrets.TARGET_DIRECTORY }}
-          rm -rf install
+    # - name: Remove install folder
+    #   uses: appleboy/ssh-action@v1.0.3
+    #   with:
+    #     host: ${{ secrets.REMOTE_HOST }}
+    #     username: ${{ secrets.REMOTE_USER }}
+    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #     script: |
+    #       cd ${{ secrets.TARGET_DIRECTORY }}
+    #       rm -rf install
 
     #########################################################
     # 🔁 ROLLBACK AUTOMÁTICO SE FALHAR
