@@ -34,7 +34,7 @@ jobs:
     #########################################################
 
     - name: Install dependencies
-      run: composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+      run: composer install --optimize-autoloader --ignore-platform-reqs
 
     #########################################################
     # 🔥 BACKUP ANTES DO DEPLOY
