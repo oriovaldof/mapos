@@ -68,9 +68,12 @@ jobs:
             --exclude=.github \
             --exclude=.env \
             --exclude=uploads \
+            --exclude=updates \
             --exclude=assets/anexos \
             --exclude=assets/arquivos \
-            --exclude=assets/userimage
+            --exclude=assets/userimage \
+            --exclude=application/logs \
+            --exclude=application/cache 
         path: ./
         remote_path: ${{ secrets.TARGET_DIRECTORY }}
         remote_host: ${{ secrets.REMOTE_HOST }}
