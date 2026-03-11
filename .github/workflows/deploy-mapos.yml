@@ -71,24 +71,10 @@ jobs:
     #########################################################
 
     - name: Rsync Deploy
+      continue-on-error: true
       uses: burnett01/rsync-deployments@7.0.1
       with:
-        switches: -rltvz \
-            --no-perms \
-            --no-owner \
-            --no-group \
-            --omit-dir-times \
-            --delete \
-            --exclude=.git \
-            --exclude=.github \
-            --exclude=.env \
-            --exclude=uploads \
-            --exclude=updates \
-            --exclude=assets/anexos \
-            --exclude=assets/arquivos \
-            --exclude=assets/userimage \
-            --exclude=application/logs \
-            --exclude=application/cache 
+        switches: "-rltvz --delete --no-perms --no-owner --no-group --omit-dir-times --exclude=.git --exclude=.github --exclude=.env --exclude=uploads --exclude=updates --exclude=assets/anexos --exclude=assets/arquivos --exclude=assets/userimage"
         path: ./
         remote_path: ${{ secrets.TARGET_DIRECTORY }}
         remote_host: ${{ secrets.REMOTE_HOST }}
