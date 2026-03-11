@@ -52,6 +52,21 @@ jobs:
           tar -czf ../backups_mapos/mapos-backup-$(date +%Y%m%d%H%M).tar.gz .
 
     #########################################################
+    # 🚀 Limpa updates
+    #########################################################
+    - name: Clean updates folder (server)
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+         cd ${{ secrets.TARGET_DIRECTORY }}
+         rm -rf updates
+         mkdir updates
+         chmod -R 775 updates
+
+    #########################################################
     # 🚀 DEPLOY COM RSYNC
     #########################################################
 
