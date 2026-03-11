@@ -73,7 +73,7 @@ jobs:
     - name: Rsync Deploy
       uses: burnett01/rsync-deployments@7.0.1
       with:
-        switches: -avzr \
+        switches: -rltvz \
             --no-perms \
             --no-owner \
             --no-group \
