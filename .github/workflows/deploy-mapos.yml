@@ -1,0 +1,157 @@
+name: Deploy MAPOS (OriWeb)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    #########################################################
+    # 📦 CHECKOUT
+    #########################################################
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    #########################################################
+    # 🐘 PHP SETUP
+    #########################################################
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: gd, mbstring, mysqli, zip, curl
+
+    #########################################################
+    # 📚 DEPENDÊNCIAS
+    #########################################################
+
+    - name: Install dependencies
+      run: composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+
+    #########################################################
+    # 🔥 BACKUP ANTES DO DEPLOY
+    #########################################################
+
+    - name: Backup current version (server)
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.TARGET_DIRECTORY }}
+          mkdir -p ../backups_mapos
+          tar -czf ../backups_mapos/mapos-backup-$(date +%Y%m%d%H%M).tar.gz .
+
+    #########################################################
+    # 🚀 DEPLOY COM RSYNC
+    #########################################################
+
+    - name: Rsync Deploy
+      uses: burnett01/rsync-deployments@7.0.1
+      with:
+        switches: -avzr --delete \
+          --exclude=.git \
+          --exclude=.github \
+          --exclude=.env \
+          --exclude=uploads \
+          --exclude=assets/anexos \
+          --exclude=assets/arquivos \
+          --exclude=assets/userimage
+        path: ./
+        remote_path: ${{ secrets.TARGET_DIRECTORY }}
+        remote_host: ${{ secrets.REMOTE_HOST }}
+        remote_user: ${{ secrets.REMOTE_USER }}
+        remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    #########################################################
+    # ⚙️ AUTO INSTALL (SE NECESSÁRIO)
+    #########################################################
+
+    - name: Auto install if needed
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+
+          cd ${{ secrets.TARGET_DIRECTORY }}
+
+          if [ ! -f application/.env ]; then
+            echo "Instalando MAPOS..."
+
+            curl -X POST http://localhost/install/do_install.php \
+              -d "host=${{ secrets.DB_HOST }}" \
+              -d "dbuser=${{ secrets.DB_USER }}" \
+              -d "dbpassword=${{ secrets.DB_PASS }}" \
+              -d "dbname=${{ secrets.DB_NAME }}" \
+              -d "full_name=${{ secrets.ADMIN_NAME }}" \
+              -d "email=${{ secrets.ADMIN_EMAIL }}" \
+              -d "password=${{ secrets.ADMIN_PASS }}" \
+              -d "base_url=${{ secrets.BASE_URL }}" \
+              -d "enter_token_expire_time=60" \
+              -d "enter_api_enabled=1"
+
+            echo "Instalação finalizada"
+          else
+            echo "MAPOS já instalado"
+          fi
+
+    #########################################################
+    # 🔄 MIGRATE AUTOMÁTICO
+    #########################################################
+
+    - name: Run migrations
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.TARGET_DIRECTORY }}
+          php index.php tools migrate
+
+    #########################################################
+    # 🔐 REMOVE INSTALL (SEGURANÇA)
+    #########################################################
+
+    - name: Remove install folder
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.TARGET_DIRECTORY }}
+          rm -rf install
+
+    #########################################################
+    # 🔁 ROLLBACK AUTOMÁTICO SE FALHAR
+    #########################################################
+
+    - name: Rollback if failed
+      if: failure()
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.TARGET_DIRECTORY }}
+          LAST_BACKUP=$(ls -t ../backups_mapos/mapos-backup-*.tar.gz | head -1)
+          if [ -f "$LAST_BACKUP" ]; then
+            rm -rf *
+            tar -xzf "$LAST_BACKUP" -C .
+            echo "Rollback concluído"
+          else
+            echo "Nenhum backup encontrado"
+          fi
